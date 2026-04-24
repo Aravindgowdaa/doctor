@@ -1,0 +1,386 @@
+{% load i18n %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% if form.errors %}{% translate "Error:" %} {% endif %}Doctor Portal Admin</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg-1: #040712;
+        --bg-2: #071225;
+        --panel: rgba(9, 15, 28, 0.78);
+        --panel-border: rgba(255, 255, 255, 0.1);
+        --text: #f8fafc;
+        --muted: rgba(248, 250, 252, 0.66);
+        --accent: #1d7ff2;
+        --accent-2: #64d2ff;
+        --danger: #ff5b6e;
+        --shadow: 0 28px 80px rgba(0, 0, 0, 0.45);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        min-height: 100%;
+      }
+
+      body {
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(29, 127, 242, 0.24), transparent 28%),
+          radial-gradient(circle at bottom right, rgba(100, 210, 255, 0.14), transparent 24%),
+          linear-gradient(180deg, var(--bg-2), var(--bg-1));
+      }
+
+      body::before,
+      body::after {
+        content: "";
+        position: fixed;
+        inset: auto;
+        border-radius: 999px;
+        filter: blur(20px);
+        pointer-events: none;
+        opacity: 0.5;
+      }
+
+      body::before {
+        width: 340px;
+        height: 340px;
+        left: -100px;
+        top: 12vh;
+        background: rgba(29, 127, 242, 0.18);
+      }
+
+      body::after {
+        width: 280px;
+        height: 280px;
+        right: -80px;
+        bottom: 12vh;
+        background: rgba(100, 210, 255, 0.12);
+      }
+
+      .shell {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 32px 20px;
+      }
+
+      .grid {
+        width: min(1180px, 100%);
+        display: grid;
+        grid-template-columns: 1.05fr 0.95fr;
+        gap: 28px;
+        align-items: stretch;
+      }
+
+      .hero,
+      .card {
+        border: 1px solid var(--panel-border);
+        background: var(--panel);
+        backdrop-filter: blur(22px);
+        -webkit-backdrop-filter: blur(22px);
+        box-shadow: var(--shadow);
+      }
+
+      .hero {
+        border-radius: 28px;
+        padding: 40px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .hero::after {
+        content: "";
+        position: absolute;
+        inset: auto -10% -20% auto;
+        width: 280px;
+        height: 280px;
+        border-radius: 999px;
+        background: radial-gradient(circle, rgba(29, 127, 242, 0.35), transparent 65%);
+        filter: blur(10px);
+        pointer-events: none;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 999px;
+        padding: 10px 14px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      .eyebrow-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        box-shadow: 0 0 18px rgba(29, 127, 242, 0.55);
+      }
+
+      .hero h1 {
+        margin: 24px 0 14px;
+        font-size: clamp(2.7rem, 4vw, 4.4rem);
+        line-height: 0.98;
+        letter-spacing: -0.05em;
+      }
+
+      .hero p {
+        margin: 0;
+        max-width: 56ch;
+        color: var(--muted);
+        font-size: 1.05rem;
+        line-height: 1.7;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 34px;
+      }
+
+      .stat {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 20px;
+        padding: 18px;
+      }
+
+      .stat strong {
+        display: block;
+        font-size: 1.35rem;
+        margin-bottom: 6px;
+      }
+
+      .stat span {
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .card {
+        border-radius: 28px;
+        padding: 34px;
+      }
+
+      .card h2 {
+        margin: 0 0 10px;
+        font-size: 1.7rem;
+      }
+
+      .card .sub {
+        margin: 0 0 28px;
+        color: var(--muted);
+      }
+
+      .note,
+      .errornote {
+        border-radius: 18px;
+        padding: 14px 16px;
+        margin-bottom: 18px;
+        font-size: 0.95rem;
+        line-height: 1.5;
+      }
+
+      .note {
+        background: rgba(29, 127, 242, 0.12);
+        border: 1px solid rgba(29, 127, 242, 0.22);
+        color: #dcecff;
+      }
+
+      .errornote {
+        background: rgba(255, 91, 110, 0.12);
+        border: 1px solid rgba(255, 91, 110, 0.22);
+        color: #ffd7dc;
+      }
+
+      .field {
+        margin-bottom: 18px;
+      }
+
+      .field label {
+        display: block;
+        margin-bottom: 10px;
+        color: rgba(248, 250, 252, 0.8);
+        font-size: 0.95rem;
+        font-weight: 700;
+      }
+
+      .field input {
+        width: 100%;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+        padding: 15px 16px;
+        font-size: 1rem;
+        outline: none;
+        transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .field input:focus {
+        border-color: rgba(29, 127, 242, 0.65);
+        box-shadow: 0 0 0 4px rgba(29, 127, 242, 0.14);
+        transform: translateY(-1px);
+      }
+
+      .actions {
+        display: grid;
+        gap: 14px;
+        margin-top: 24px;
+      }
+
+      .submit {
+        width: 100%;
+        border: 0;
+        border-radius: 18px;
+        padding: 15px 18px;
+        background: linear-gradient(135deg, var(--accent), #2d9cff);
+        color: white;
+        font-size: 1rem;
+        font-weight: 800;
+        cursor: pointer;
+        box-shadow: 0 16px 36px rgba(29, 127, 242, 0.32);
+        transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+      }
+
+      .submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 20px 44px rgba(29, 127, 242, 0.42);
+        filter: brightness(1.03);
+      }
+
+      .password-reset-link {
+        margin-top: 12px;
+        text-align: center;
+      }
+
+      .password-reset-link a {
+        color: rgba(214, 232, 255, 0.85);
+        text-decoration: none;
+      }
+
+      .password-reset-link a:hover {
+        text-decoration: underline;
+      }
+
+      .footer {
+        margin-top: 18px;
+        color: rgba(248, 250, 252, 0.45);
+        font-size: 0.88rem;
+      }
+
+      @media (max-width: 960px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        .hero,
+        .card {
+          padding: 26px;
+          border-radius: 24px;
+        }
+
+        .stats {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <div class="grid">
+        <section class="hero">
+          <div class="eyebrow"><span class="eyebrow-dot"></span>Doctor Portal Admin</div>
+          <h1>Control the entire health portal from one calm dashboard.</h1>
+          <p>
+            Review doctors, manage users, inspect appointments, and keep the platform running smoothly from a premium
+            admin workspace designed for speed and clarity.
+          </p>
+
+          <div class="stats" aria-hidden="true">
+            <div class="stat">
+              <strong>24/7</strong>
+              <span>Admin visibility</span>
+            </div>
+            <div class="stat">
+              <strong>Fast</strong>
+              <span>Approval workflows</span>
+            </div>
+            <div class="stat">
+              <strong>Secure</strong>
+              <span>Role-based access</span>
+            </div>
+          </div>
+
+          <p class="footer">Trusted operations for patients, doctors, and appointments.</p>
+        </section>
+
+        <section class="card">
+          <h2>Sign in</h2>
+          <p class="sub">Use your admin credentials to access the portal.</p>
+
+          {% if form.errors and not form.non_field_errors %}
+            <p class="errornote">
+              {% blocktranslate count counter=form.errors.items|length %}Please correct the error below.{% plural %}Please correct the errors below.{% endblocktranslate %}
+            </p>
+          {% endif %}
+
+          {% if form.non_field_errors %}
+            {% for error in form.non_field_errors %}
+              <p class="errornote">{{ error }}</p>
+            {% endfor %}
+          {% endif %}
+
+          {% if user.is_authenticated %}
+            <p class="note">
+              {% blocktranslate trimmed %}
+                You are authenticated as {{ username }}, but are not authorized to access this page. Would you like to
+                login to a different account?
+              {% endblocktranslate %}
+            </p>
+          {% endif %}
+
+          <form action="{{ app_path }}" method="post" id="login-form">
+            {% csrf_token %}
+            <div class="field">
+              {{ form.username.label_tag }}
+              {{ form.username }}
+              {{ form.username.errors }}
+            </div>
+            <div class="field">
+              {{ form.password.label_tag }}
+              {{ form.password }}
+              {{ form.password.errors }}
+              <input type="hidden" name="next" value="{{ next }}">
+            </div>
+
+            {% url 'admin_password_reset' as password_reset_url %}
+            {% if password_reset_url %}
+              <div class="password-reset-link">
+                <a href="{{ password_reset_url }}">{% translate 'Forgotten your login credentials?' %}</a>
+              </div>
+            {% endif %}
+
+            <div class="actions">
+              <button type="submit" class="submit">{% translate 'Log in' %}</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </div>
+  </body>
+</html>

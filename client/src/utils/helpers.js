@@ -17,6 +17,86 @@ export const getDashboardPath = (role) => {
   return "/patient/dashboard";
 };
 
+const maleFallbackPhotos = [
+  "https://cdn.pixabay.com/photo/2023/12/21/06/23/doctor-8461303_1280.jpg",
+  "https://cdn.pixabay.com/photo/2016/11/08/05/29/operation-1807543_640.jpg",
+  "https://cdn.pixabay.com/photo/2016/09/11/18/02/surgery-1662204_640.jpg",
+];
+
+const femaleFallbackPhotos = [
+  "https://cdn.pixabay.com/photo/2020/06/20/15/30/woman-doctor-5321351_640.jpg",
+  "https://cdn.pixabay.com/photo/2017/03/14/03/20/woman-2141808_1280.jpg",
+  "https://cdn.pixabay.com/photo/2025/05/29/08/25/doctor-9628974_1280.jpg",
+];
+
+const professionPhotos = {
+  cardiologist: {
+    male: "https://cdn.pixabay.com/photo/2023/12/21/06/23/doctor-8461303_1280.jpg",
+    female: "https://cdn.pixabay.com/photo/2020/06/20/15/30/woman-doctor-5321351_640.jpg",
+  },
+  dermatologist: {
+    male: "https://cdn.pixabay.com/photo/2023/12/21/06/23/doctor-8461303_1280.jpg",
+    female: "https://cdn.pixabay.com/photo/2017/03/14/03/20/woman-2141808_1280.jpg",
+  },
+  pediatrician: {
+    male: "https://cdn.pixabay.com/photo/2021/07/27/17/43/doctor-6497498_640.jpg",
+    female: "https://cdn.pixabay.com/photo/2021/07/27/17/43/doctor-6497498_640.jpg",
+  },
+  "orthopedic surgeon": {
+    male: "https://cdn.pixabay.com/photo/2016/11/08/05/29/operation-1807543_640.jpg",
+    female: "https://cdn.pixabay.com/photo/2025/05/29/08/25/doctor-9628974_1280.jpg",
+  },
+  gynecologist: {
+    male: "https://cdn.pixabay.com/photo/2015/02/26/15/40/doctor-650534_1280.jpg",
+    female: "https://cdn.pixabay.com/photo/2025/05/29/08/25/doctor-9628974_1280.jpg",
+  },
+  "general physician": {
+    male: "https://cdn.pixabay.com/photo/2015/02/26/15/40/doctor-650534_1280.jpg",
+    female: "https://cdn.pixabay.com/photo/2020/06/20/15/30/woman-doctor-5321351_640.jpg",
+  },
+  dentist: {
+    male: "https://cdn.pixabay.com/photo/2019/07/30/15/57/dentist-4373290_640.jpg",
+    female: "https://cdn.pixabay.com/photo/2019/07/30/15/57/dentist-4373290_640.jpg",
+  },
+};
+
+const hashText = (value = "") =>
+  value.split("").reduce((hash, char) => {
+    const next = (hash * 31 + char.charCodeAt(0)) % 9973;
+    return next;
+  }, 0);
+
+export const getDoctorAvatarUrl = (doctor) => {
+  const explicitPhoto = doctor?.profile_photo || doctor?.user?.avatar;
+  if (explicitPhoto) return explicitPhoto;
+
+  const gender = doctor?.user?.gender || doctor?.gender;
+  const specialization = normalizeText(doctor?.specialization || doctor?.user?.specialization || "");
+  const seed = doctor?.user?.name || doctor?.name || doctor?.email || doctor?.id || "doctor";
+  const index = hashText(String(seed)) % maleFallbackPhotos.length;
+
+  const professionPhoto = professionPhotos[specialization];
+  if (professionPhoto) {
+    if (gender === "female" && professionPhoto.female) {
+      return professionPhoto.female;
+    }
+    if (gender === "male" && professionPhoto.male) {
+      return professionPhoto.male;
+    }
+    return professionPhoto.female || professionPhoto.male;
+  }
+
+  if (gender === "female") {
+    return femaleFallbackPhotos[index];
+  }
+
+  if (gender === "male") {
+    return maleFallbackPhotos[index];
+  }
+
+  return maleFallbackPhotos[index];
+};
+
 export const loadRazorpay = () =>
   new Promise((resolve) => {
     if (window.Razorpay) {

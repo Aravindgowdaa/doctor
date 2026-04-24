@@ -15,11 +15,89 @@ import { getGoogleMapsApiKey, haversineDistance, normalizeText } from "../utils/
 const searchQueries = ["doctors near me", "clinics near me", "hospitals near me"];
 const defaultCenter = { lat: 19.076, lng: 72.8777 };
 
+const fallbackPlaces = [
+  {
+    name: "Sunrise Clinic",
+    address: "Bandra West, Mumbai",
+    rating: 4.8,
+    isOpen: true,
+    openStatus: "Open now",
+    offsetLat: 0.012,
+    offsetLng: 0.008,
+  },
+  {
+    name: "City Care Hospital",
+    address: "Andheri East, Mumbai",
+    rating: 4.6,
+    isOpen: true,
+    openStatus: "Open now",
+    offsetLat: -0.01,
+    offsetLng: 0.014,
+  },
+  {
+    name: "Family Health Centre",
+    address: "Dadar, Mumbai",
+    rating: 4.4,
+    isOpen: false,
+    openStatus: "Closed now",
+    offsetLat: 0.018,
+    offsetLng: -0.006,
+  },
+];
+
+const buildFallbackPlaces = (doctors, location = defaultCenter) => {
+  const doctorPlaces = doctors
+    .filter((doctor) => doctor.is_approved !== false)
+    .slice(0, 6)
+    .map((doctor, index) => {
+      const distance = Number((1.2 + index * 0.6).toFixed(1));
+      return {
+        placeId: `demo-doctor-${doctor.id}`,
+        name: `Dr. ${doctor.user?.name || "Doctor"} - ${doctor.specialization || "Specialist"}`,
+        address: `${doctor.clinic_name || "Clinic"}${doctor.city ? `, ${doctor.city}` : ""}`,
+        rating: Number(doctor.average_rating || 4.5),
+        isOpen: index % 3 !== 2,
+        openStatus: index % 3 !== 2 ? "Open now" : "Closed now",
+        location: {
+          lat: location.lat + 0.004 * (index + 1),
+          lng: location.lng + 0.004 * (index % 2 === 0 ? 1 : -1),
+        },
+        distance,
+        distanceText: `${distance} km away`,
+        dbDoctor: doctor,
+        placeUrl: "",
+      };
+    });
+
+  const nearbyPlaces = fallbackPlaces.map((place, index) => {
+    const distance = Number((0.9 + index * 0.7).toFixed(1));
+    return {
+      placeId: `demo-place-${index}`,
+      name: place.name,
+      address: place.address,
+      rating: place.rating,
+      isOpen: place.isOpen,
+      openStatus: place.openStatus,
+      location: {
+        lat: location.lat + place.offsetLat,
+        lng: location.lng + place.offsetLng,
+      },
+      distance,
+      distanceText: `${distance} km away`,
+      dbDoctor: null,
+      placeUrl: "",
+    };
+  });
+
+  return dedupePlaces([...doctorPlaces, ...nearbyPlaces]);
+};
+
 const dedupePlaces = (places) => {
   const byId = new Map();
   places.forEach((place) => {
-    if (!place?.place_id || byId.has(place.place_id)) return;
-    byId.set(place.place_id, place);
+    const key = place?.place_id || place?.placeId;
+    if (!key || byId.has(key)) return;
+    byId.set(key, place);
   });
   return Array.from(byId.values());
 };
@@ -91,7 +169,16 @@ const NearbyDoctors = () => {
   );
 
   const searchNearby = useCallback(async () => {
-    if (!map || !location || !window.google?.maps?.places) return;
+    if (!location) return;
+
+    if (!apiKey || !map || !window.google?.maps?.places) {
+      const demoPlaces = buildFallbackPlaces(dbDoctors, location);
+      setAllDoctors(demoPlaces);
+      setSelectedDoctorId(demoPlaces[0]?.placeId || null);
+      setError("Showing demo nearby doctors and clinics. Add a Google Maps API key to load live nearby results.");
+      setLoadingPlaces(false);
+      return;
+    }
 
     setLoadingPlaces(true);
     setError("");
@@ -130,7 +217,7 @@ const NearbyDoctors = () => {
         const dbDoctor = matchDbDoctor(place);
 
         return {
-          placeId: place.place_id,
+          placeId: place.place_id || place.placeId,
           name: place.name,
           address: place.formatted_address || place.vicinity || "Address unavailable",
           rating: place.rating || null,
@@ -162,11 +249,18 @@ const NearbyDoctors = () => {
     } finally {
       setLoadingPlaces(false);
     }
-  }, [filters.maxDistance, location, map, matchDbDoctor]);
+  }, [apiKey, dbDoctors, filters.maxDistance, location, map, matchDbDoctor]);
 
   useEffect(() => {
     searchNearby();
   }, [searchNearby]);
+
+  useEffect(() => {
+    if (apiKey || !location || !dbDoctors.length) return;
+    const demoPlaces = buildFallbackPlaces(dbDoctors, location);
+    setAllDoctors(demoPlaces);
+    setSelectedDoctorId(demoPlaces[0]?.placeId || null);
+  }, [apiKey, dbDoctors, location]);
 
   const filteredDoctors = useMemo(
     () =>
@@ -197,19 +291,19 @@ const NearbyDoctors = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[#050816] text-white">
       <Navbar />
       <section className="container-app py-10">
         <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="text-4xl font-bold">Nearby Doctors</h1>
-            <p className="mt-2 max-w-2xl text-slate-500">
+            <h1 className="text-4xl font-bold text-white">Nearby Doctors</h1>
+            <p className="mt-2 max-w-2xl text-white/60">
               Discover doctors, clinics, and hospitals around your current location, then jump straight into the existing booking flow when we find a portal match.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="label">Minimum Rating</label>
+              <label className="label text-white/75">Minimum Rating</label>
               <select className="input" value={filters.rating} onChange={(e) => setFilters((prev) => ({ ...prev, rating: e.target.value }))}>
                 <option value="0">All ratings</option>
                 <option value="3">3+ stars</option>
@@ -218,7 +312,7 @@ const NearbyDoctors = () => {
               </select>
             </div>
             <div>
-              <label className="label">Distance Radius</label>
+              <label className="label text-white/75">Distance Radius</label>
               <select className="input" value={filters.maxDistance} onChange={(e) => setFilters((prev) => ({ ...prev, maxDistance: e.target.value }))}>
                 <option value="5">5 km</option>
                 <option value="7">7 km</option>
@@ -231,22 +325,40 @@ const NearbyDoctors = () => {
         {(loadingLocation || loadingPlaces) && <Loader text={loadingLocation ? "Finding your location..." : "Searching nearby doctors..."} />}
 
         {error && (
-          <div className="mb-6 rounded-3xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-700">
+          <div className="mb-6 rounded-3xl border border-amber-500/20 bg-amber-500/10 px-5 py-4 text-sm text-amber-100">
             {error}
           </div>
         )}
 
         <div className="grid gap-6 lg:grid-cols-[420px,1fr]">
           <div className="space-y-4">
-            <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} className="card">
+            <motion.div
+              initial={{ opacity: 0, x: -16 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="rounded-3xl border border-white/10 bg-[#0b1220]/95 p-5 shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-2xl"
+            >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-slate-500">Results</p>
-                  <h2 className="text-2xl font-bold text-slate-900">{filteredDoctors.length} nearby places</h2>
+                  <p className="text-sm font-semibold text-white/50">Results</p>
+                  <h2 className="text-2xl font-bold text-white">{filteredDoctors.length} nearby places</h2>
                 </div>
                 <button type="button" className="btn-secondary !px-4 !py-2" onClick={searchNearby}>
                   Refresh
                 </button>
+              </div>
+              <div className="mt-4 grid grid-cols-3 gap-3 text-xs text-white/60">
+                <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
+                  <p className="text-white/35">Doctors</p>
+                  <p className="mt-1 text-lg font-bold text-white">{filteredDoctors.filter((doctor) => doctor.dbDoctor).length}</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
+                  <p className="text-white/35">Clinics</p>
+                  <p className="mt-1 text-lg font-bold text-white">{filteredDoctors.filter((doctor) => !doctor.dbDoctor).length}</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
+                  <p className="text-white/35">Open now</p>
+                  <p className="mt-1 text-lg font-bold text-white">{filteredDoctors.filter((doctor) => doctor.isOpen).length}</p>
+                </div>
               </div>
             </motion.div>
             <NearbyDoctorsList
@@ -274,8 +386,8 @@ const NearbyDoctors = () => {
       <Modal open={Boolean(externalDoctor)} onClose={() => setExternalDoctor(null)} title={externalDoctor ? `Request booking for ${externalDoctor.name}` : "External booking"}>
         {externalDoctor && (
           <form className="space-y-4" onSubmit={handleExternalBooking}>
-            <div className="rounded-3xl bg-slate-50 p-4 text-sm text-slate-600">
-              <p className="font-semibold text-slate-900">{externalDoctor.name}</p>
+            <div className="rounded-3xl border border-white/10 bg-[#0b1220]/95 p-4 text-sm text-white/65 shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-2xl">
+              <p className="font-semibold text-white">{externalDoctor.name}</p>
               <p className="mt-1">{externalDoctor.address}</p>
               <p className="mt-1">{externalDoctor.distanceText}</p>
             </div>

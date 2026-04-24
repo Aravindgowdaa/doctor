@@ -34,10 +34,10 @@ const DoctorAvailability = () => {
 
   return (
     <DashboardLayout role="doctor" title="Weekly Availability">
-      <div className="card space-y-6">
+      <div className="card space-y-6 border-white/10 bg-white/5">
         <AvailabilityForm initialSlots={slots} onSubmit={saveAvailability} />
-        <div className="rounded-3xl border border-slate-100 p-5">
-          <h2 className="text-xl font-bold">Block Specific Date</h2>
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+          <h2 className="text-xl font-bold text-white">Block Specific Date</h2>
           <div className="mt-4 flex flex-col gap-3 sm:flex-row">
             <input className="input" type="date" value={blockedDate} onChange={(e) => setBlockedDate(e.target.value)} />
             <button type="button" className="btn-primary" onClick={addBlockedDate}>

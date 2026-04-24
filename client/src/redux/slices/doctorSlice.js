@@ -43,17 +43,23 @@ const doctorSlice = createSlice({
     builder
       .addCase(fetchDoctors.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(fetchDoctors.fulfilled, (state, action) => {
         state.loading = false;
         state.doctors = action.payload;
+        state.error = null;
       })
       .addCase(fetchDoctors.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
+      .addCase(fetchBestDoctors.pending, (state) => {
+        state.error = null;
+      })
       .addCase(fetchBestDoctors.fulfilled, (state, action) => {
         state.bestDoctors = action.payload;
+        state.error = null;
       })
       .addCase(fetchDoctorDetail.pending, (state) => {
         state.loading = true;

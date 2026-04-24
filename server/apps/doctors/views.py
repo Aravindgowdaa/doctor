@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 
 from config.cloudinary_utils import upload_file
 from config.permissions import IsDoctor
-from config.response import api_response
+from config.response import api_response, format_validation_error
 
 from .models import BlockedDate, DoctorProfile, WeeklyAvailability
 from .serializers import (
@@ -117,7 +117,7 @@ class DoctorProfileUpdateView(APIView):
             serializer.save()
             return api_response(True, "Doctor profile updated successfully", {"doctor": DoctorProfileSerializer(doctor).data})
         except ValidationError as exc:
-            return api_response(False, str(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
+            return api_response(False, format_validation_error(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
         except Exception as exc:
             return api_response(False, f"Unable to update doctor profile: {exc}", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -135,7 +135,7 @@ class DoctorSlotsUpdateView(APIView):
                 WeeklyAvailability.objects.create(doctor=doctor, **slot)
             return api_response(True, "Availability updated successfully", {"slots": DoctorProfileSerializer(doctor).data["available_slots"]})
         except ValidationError as exc:
-            return api_response(False, str(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
+            return api_response(False, format_validation_error(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
         except Exception as exc:
             return api_response(False, f"Unable to update slots: {exc}", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -152,6 +152,6 @@ class DoctorBlockDateView(APIView):
             message = "Blocked date added successfully" if created else "Date was already blocked"
             return api_response(True, message, {"blocked_date": {"id": blocked_date.id, "date": blocked_date.date}})
         except ValidationError as exc:
-            return api_response(False, str(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
+            return api_response(False, format_validation_error(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
         except Exception as exc:
             return api_response(False, f"Unable to block date: {exc}", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)

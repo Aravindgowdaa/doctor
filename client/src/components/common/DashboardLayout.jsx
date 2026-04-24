@@ -26,12 +26,13 @@ const menus = {
 };
 
 const DashboardLayout = ({ role, title, children }) => (
-  <div className="min-h-screen bg-slate-50">
+  <div className="min-h-screen bg-[#050816] text-white">
+    <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(29,127,242,0.14),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(23,178,106,0.1),transparent_24%)]" />
     <Navbar />
-    <div className="container-app grid gap-8 py-10 lg:grid-cols-[260px,1fr]">
-      <aside className="card h-fit">
-        <Link to="/" className="mb-6 block text-xs font-semibold uppercase tracking-[0.2em] text-brand-700">
-          Doctor Portal
+    <div className="container-app grid gap-8 py-10 lg:grid-cols-[280px,1fr]">
+      <aside className="h-fit rounded-[28px] border border-white/10 bg-[#0b1220]/95 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-2xl">
+        <Link to="/" className="mb-6 block text-xs font-semibold uppercase tracking-[0.2em] text-white/45">
+          {role === "patient" ? "Patient Portal" : "Doctor Portal"}
         </Link>
         <div className="space-y-2">
           {menus[role].map((item) => (
@@ -39,8 +40,8 @@ const DashboardLayout = ({ role, title, children }) => (
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold ${
-                  isActive ? "bg-brand-50 text-brand-700" : "text-slate-600 hover:bg-slate-50"
+                `flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
+                  isActive ? "bg-brand-600 text-white shadow-soft" : "text-white/70 hover:bg-white/5 hover:text-white"
                 }`
               }
             >
@@ -50,11 +51,12 @@ const DashboardLayout = ({ role, title, children }) => (
           ))}
         </div>
       </aside>
-      <main>
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold">{title}</h1>
+      <main className="space-y-6">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/45">Dashboard</p>
+          <h1 className="mt-2 text-3xl font-bold text-white">{title}</h1>
         </div>
-        {children}
+        <div className="space-y-6">{children}</div>
       </main>
     </div>
   </div>

@@ -7,8 +7,7 @@ import { useState } from "react";
 import { logoutUser } from "../../redux/slices/authSlice";
 import { getDashboardPath } from "../../utils/helpers";
 
-const linkClass = ({ isActive }) =>
-  `text-sm font-semibold transition ${isActive ? "text-brand-700" : "text-slate-600 hover:text-brand-700"}`;
+const linkClass = ({ isActive }) => `text-sm font-semibold transition ${isActive ? "text-white" : "text-white/70 hover:text-white"}`;
 
 const Navbar = () => {
   const { user } = useSelector((state) => state.auth);
@@ -27,15 +26,15 @@ const Navbar = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/70 bg-white/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#050816]/75 text-white backdrop-blur-xl">
       <div className="container-app flex h-20 items-center justify-between gap-4">
         <Link to="/" className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-600 text-white">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-950">
             <FiCalendar />
           </div>
           <div>
-            <p className="text-lg font-bold text-slate-900">Doctor Portal</p>
-            <p className="text-xs text-slate-500">Trusted medical appointments</p>
+            <p className="text-lg font-bold text-white">Doctor Portal</p>
+            <p className="text-xs text-white/55">Trusted medical appointments</p>
           </div>
         </Link>
 
@@ -54,14 +53,14 @@ const Navbar = () => {
               <NavLink to="/login" className={linkClass}>
                 Login
               </NavLink>
-              <Link to="/signup" className="btn-primary">
+              <Link to="/signup" className="btn-secondary">
                 Create account
               </Link>
             </>
           )}
           {user && (
             <>
-              <Link to={getDashboardPath(user.role)} className={linkClass}>
+              <Link to={getDashboardPath(user.role)} className="text-sm font-semibold text-white/70 transition hover:text-white">
                 Dashboard
               </Link>
               <button type="button" onClick={handleLogout} className="btn-secondary">
@@ -71,13 +70,13 @@ const Navbar = () => {
           )}
         </nav>
 
-        <button type="button" className="inline-flex text-2xl md:hidden" onClick={() => setOpen((prev) => !prev)}>
+        <button type="button" className="inline-flex text-2xl text-white md:hidden" onClick={() => setOpen((prev) => !prev)}>
           <FiMenu />
         </button>
       </div>
 
       {open && (
-        <div className="border-t border-slate-100 bg-white md:hidden">
+        <div className="border-t border-white/10 bg-[#050816] text-white md:hidden">
           <div className="container-app flex flex-col gap-4 py-4">
             <Link to="/">Home</Link>
             <Link to="/doctors">Doctors</Link>

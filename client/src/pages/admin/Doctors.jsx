@@ -1,18 +1,25 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
+import Loader from "../../components/common/Loader";
 import DoctorTable from "../../components/admin/DoctorTable";
 import DashboardLayout from "../../components/common/DashboardLayout";
 import axiosInstance from "../../utils/axiosInstance";
 
 const AdminDoctors = ({ approvedOnly = false }) => {
   const [doctors, setDoctors] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const loadDoctors = () => {
-    axiosInstance.get("/admin/doctors").then(({ data }) => {
-      const all = data.data.doctors;
-      setDoctors(approvedOnly ? all.filter((doctor) => doctor.is_approved) : all.filter((doctor) => !doctor.is_approved && !doctor.is_rejected));
-    }).catch(() => {});
+    setLoading(true);
+    axiosInstance
+      .get("/admin/doctors")
+      .then(({ data }) => {
+        const all = data.data.doctors;
+        setDoctors(approvedOnly ? all.filter((doctor) => doctor.is_approved) : all.filter((doctor) => !doctor.is_approved && !doctor.is_rejected));
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {
@@ -37,25 +44,30 @@ const AdminDoctors = ({ approvedOnly = false }) => {
 
   return (
     <DashboardLayout role="admin" title={approvedOnly ? "All Doctors" : "Doctor Approval Requests"}>
-      <DoctorTable
-        doctors={doctors}
-        actions={(doctor) =>
-          approvedOnly ? (
-            <button type="button" className="btn-secondary !px-4 !py-2" onClick={() => runAction(doctor, "block")}>
-              {doctor.user?.is_blocked ? "Unblock" : "Block"}
-            </button>
-          ) : (
-            <div className="flex gap-2">
-              <button type="button" className="btn-primary !px-4 !py-2" onClick={() => runAction(doctor, "approve")}>
-                Approve
+      {loading ? (
+        <Loader text="Loading doctors..." />
+      ) : (
+        <DoctorTable
+          doctors={doctors}
+          emptyMessage={approvedOnly ? "No approved doctors found." : "No pending doctor requests right now."}
+          actions={(doctor) =>
+            approvedOnly ? (
+              <button type="button" className="btn-secondary !px-4 !py-2" onClick={() => runAction(doctor, "block")}>
+                {doctor.user?.is_blocked ? "Unblock" : "Block"}
               </button>
-              <button type="button" className="btn-secondary !px-4 !py-2" onClick={() => runAction(doctor, "reject")}>
-                Reject
-              </button>
-            </div>
-          )
-        }
-      />
+            ) : (
+              <div className="flex gap-2">
+                <button type="button" className="btn-primary !px-4 !py-2" onClick={() => runAction(doctor, "approve")}>
+                  Approve
+                </button>
+                <button type="button" className="btn-secondary !px-4 !py-2" onClick={() => runAction(doctor, "reject")}>
+                  Reject
+                </button>
+              </div>
+            )
+          }
+        />
+      )}
     </DashboardLayout>
   );
 };

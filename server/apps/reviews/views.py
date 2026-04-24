@@ -4,7 +4,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.views import APIView
 
 from config.permissions import IsPatient
-from config.response import api_response
+from config.response import api_response, format_validation_error
 
 from .models import Review
 from .serializers import CreateReviewSerializer, ReviewSerializer
@@ -24,7 +24,7 @@ class ReviewCreateView(APIView):
             review.doctor.save(update_fields=["average_rating", "total_reviews"])
             return api_response(True, "Review added successfully", {"review": ReviewSerializer(review).data}, status.HTTP_201_CREATED)
         except ValidationError as exc:
-            return api_response(False, str(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
+            return api_response(False, format_validation_error(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
         except Exception as exc:
             return api_response(False, f"Unable to add review: {exc}", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

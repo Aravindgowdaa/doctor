@@ -1,0 +1,286 @@
+{% extends "admin/base.html" %}
+{% load i18n static %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | Doctor Portal Admin{% endblock %}
+
+{% block branding %}
+<div class="dp-brand">
+  <a href="{% url 'admin:index' %}" class="dp-brand__link">
+    <span class="dp-brand__mark">DP</span>
+    <span class="dp-brand__text">
+      <strong>Doctor Portal</strong>
+      <small>Administration</small>
+    </span>
+  </a>
+</div>
+{% endblock %}
+
+{% block usertools %}
+{% if has_permission %}
+<div id="user-tools" class="dp-user-tools">
+  <span class="dp-user-tools__welcome">
+    {% translate 'Welcome,' %} <strong>{% firstof user.get_short_name user.get_username %}</strong>
+  </span>
+  <div class="dp-user-tools__links">
+    {% if site_url %}
+      <a href="{{ site_url }}">{% translate 'View site' %}</a>
+    {% endif %}
+    {% if user.has_usable_password %}
+      <a href="{% url 'admin:password_change' %}">{% translate 'Change password' %}</a>
+    {% endif %}
+    <form id="logout-form" method="post" action="{% url 'admin:logout' %}">
+      {% csrf_token %}
+      <button type="submit">{% translate 'Log out' %}</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at top left, rgba(0, 198, 255, 0.18), transparent 25%),
+        radial-gradient(circle at bottom right, rgba(102, 51, 255, 0.28), transparent 24%),
+        linear-gradient(180deg, #06101f 0%, #0a1530 52%, #180f3f 100%);
+      color: #e8eefc;
+    }
+
+    #header {
+      background: rgba(8, 12, 28, 0.88);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.22);
+    }
+
+    #branding {
+      padding-left: 8px;
+    }
+
+    .dp-brand__link {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      color: #f8fbff;
+      text-decoration: none;
+    }
+
+    .dp-brand__mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 52px;
+      height: 52px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #29d3ff 0%, #6b5cff 100%);
+      color: #06101f;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      box-shadow: 0 16px 40px rgba(41, 211, 255, 0.22);
+    }
+
+    .dp-brand__text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+
+    .dp-brand__text strong {
+      font-size: 1.15rem;
+      font-weight: 800;
+    }
+
+    .dp-brand__text small {
+      color: rgba(232, 238, 252, 0.62);
+      font-size: 0.76rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    #user-tools,
+    #user-tools a,
+    #user-tools button {
+      color: rgba(248, 251, 255, 0.84);
+    }
+
+    .dp-user-tools {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      padding-right: 8px;
+    }
+
+    .dp-user-tools__welcome {
+      color: rgba(248, 251, 255, 0.78);
+      font-size: 0.88rem;
+      white-space: nowrap;
+    }
+
+    .dp-user-tools__welcome strong {
+      color: #fff;
+    }
+
+    .dp-user-tools__links {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .dp-user-tools__links a,
+    .dp-user-tools__links button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 36px;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.06);
+      color: #f8fbff !important;
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 700;
+      transition: transform 0.18s ease, background 0.18s ease;
+    }
+
+    .dp-user-tools__links a:hover,
+    .dp-user-tools__links button:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .breadcrumbs {
+      background: rgba(255, 255, 255, 0.04);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      color: rgba(232, 238, 252, 0.72);
+    }
+
+    .breadcrumbs a {
+      color: #8fd7ff;
+    }
+
+    .module {
+      background: rgba(8, 13, 32, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+      overflow: hidden;
+    }
+
+    .module h2,
+    .module caption,
+    .module th {
+      background: linear-gradient(135deg, rgba(124, 77, 255, 0.92), rgba(91, 140, 255, 0.92));
+      color: #fff;
+      border: 0;
+    }
+
+    .module h2 {
+      padding: 16px 18px;
+      font-size: 0.92rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .module table,
+    .module .results,
+    .module .module,
+    .module ul {
+      background: transparent;
+    }
+
+    .module tbody tr,
+    .module .results tr {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .module td,
+    .module th {
+      color: #e8eefc;
+    }
+
+    .module a:link,
+    .module a:visited {
+      color: #69c7ff;
+    }
+
+    .module .addlink,
+    .module .changelink,
+    .object-tools a {
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #e8eefc !important;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .module .addlink:hover,
+    .module .changelink:hover,
+    .object-tools a:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    input,
+    select,
+    textarea {
+      background: rgba(255, 255, 255, 0.05);
+      color: #f8fbff;
+      border-color: rgba(255, 255, 255, 0.14);
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: #29d3ff;
+      box-shadow: 0 0 0 3px rgba(41, 211, 255, 0.16);
+    }
+
+    .button,
+    input[type="submit"],
+    input[type="button"],
+    .submit-row input {
+      border-radius: 14px;
+      background: linear-gradient(135deg, #29d3ff 0%, #5d7cff 100%);
+      color: #05101d;
+      border: 0;
+      box-shadow: 0 14px 30px rgba(41, 211, 255, 0.24);
+      font-weight: 800;
+    }
+
+    .button:hover,
+    input[type="submit"]:hover,
+    input[type="button"]:hover {
+      filter: brightness(1.05);
+    }
+
+    #content {
+      padding-top: 22px;
+    }
+
+    .dashboard .module table th {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .messagelist li {
+      border-radius: 16px;
+    }
+
+    @media (max-width: 1024px) {
+      .dp-user-tools {
+        font-size: 0.78rem;
+      }
+    }
+  </style>
+{% endblock %}

@@ -29,13 +29,13 @@ const DoctorAppointments = () => {
 
   return (
     <DashboardLayout role="doctor" title="Manage Appointments">
-      <div className="card mb-6 grid gap-4 md:grid-cols-2">
+      <div className="card mb-6 grid gap-4 border-white/10 bg-white/5 md:grid-cols-2">
         <input className="input" placeholder="Filter by status" value={filters.status} onChange={(e) => setFilters((prev) => ({ ...prev, status: e.target.value }))} />
         <input className="input" type="date" value={filters.date} onChange={(e) => setFilters((prev) => ({ ...prev, date: e.target.value }))} />
       </div>
-      <div className="card overflow-x-auto">
+      <div className="card overflow-x-auto border-white/10 bg-white/5">
         <table className="min-w-full text-left text-sm">
-          <thead className="text-slate-500">
+          <thead className="text-white/50">
             <tr>
               <th className="pb-4">Patient</th>
               <th className="pb-4">Date</th>
@@ -46,10 +46,10 @@ const DoctorAppointments = () => {
           </thead>
           <tbody>
             {items.map((appointment) => (
-              <tr key={appointment.id} className="border-t border-slate-100">
-                <td className="py-4">{appointment.patient?.name}</td>
-                <td className="py-4">{formatDate(appointment.date)} {appointment.time_slot}</td>
-                <td className="py-4">{appointment.symptoms || "-"}</td>
+              <tr key={appointment.id} className="border-t border-white/10">
+                <td className="py-4 text-white/80">{appointment.patient?.name}</td>
+                <td className="py-4 text-white/70">{formatDate(appointment.date)} {appointment.time_slot}</td>
+                <td className="py-4 text-white/70">{appointment.symptoms || "-"}</td>
                 <td className="py-4"><StatusBadge status={appointment.status} /></td>
                 <td className="py-4">
                   <div className="flex gap-2">

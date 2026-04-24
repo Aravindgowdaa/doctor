@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 
 from config.cloudinary_utils import upload_file
 from config.email_utils import send_portal_email
-from config.response import api_response
+from config.response import api_response, format_validation_error
 
 from .models import PasswordResetOTP, User
 from .serializers import (
@@ -45,7 +45,7 @@ class RegisterPatientView(APIView):
             )
             return api_response(True, "Patient registered successfully", {"user": UserSerializer(user).data}, status.HTTP_201_CREATED)
         except ValidationError as exc:
-            return api_response(False, str(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
+            return api_response(False, format_validation_error(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
         except Exception as exc:
             return api_response(False, f"Unable to register patient: {exc}", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -74,7 +74,7 @@ class RegisterDoctorView(APIView):
                 status.HTTP_201_CREATED,
             )
         except ValidationError as exc:
-            return api_response(False, str(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
+            return api_response(False, format_validation_error(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
         except Exception as exc:
             return api_response(False, f"Unable to register doctor: {exc}", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -92,7 +92,7 @@ class LoginView(APIView):
             set_auth_cookies(response, refresh)
             return response
         except ValidationError as exc:
-            return api_response(False, str(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
+            return api_response(False, format_validation_error(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
         except Exception as exc:
             return api_response(False, f"Unable to login: {exc}", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -127,7 +127,7 @@ class ForgotPasswordView(APIView):
             send_portal_email("Doctor Portal OTP", f"Your password reset OTP is {otp_record.otp}", [email])
             return api_response(True, "OTP sent successfully")
         except ValidationError as exc:
-            return api_response(False, str(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
+            return api_response(False, format_validation_error(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
         except Exception as exc:
             return api_response(False, f"Unable to send OTP: {exc}", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -149,7 +149,7 @@ class VerifyOTPView(APIView):
             otp_record.save(update_fields=["is_verified"])
             return api_response(True, "OTP verified successfully")
         except ValidationError as exc:
-            return api_response(False, str(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
+            return api_response(False, format_validation_error(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
         except Exception as exc:
             return api_response(False, f"Unable to verify OTP: {exc}", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -170,7 +170,7 @@ class ResetPasswordView(APIView):
             otp_record.delete()
             return api_response(True, "Password reset successful")
         except ValidationError as exc:
-            return api_response(False, str(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
+            return api_response(False, format_validation_error(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
         except Exception as exc:
             return api_response(False, f"Unable to reset password: {exc}", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -200,7 +200,7 @@ class ProfileView(APIView):
             serializer.save()
             return api_response(True, "Profile updated successfully", {"user": UserSerializer(request.user).data})
         except ValidationError as exc:
-            return api_response(False, str(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
+            return api_response(False, format_validation_error(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
         except Exception as exc:
             return api_response(False, f"Unable to update profile: {exc}", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -219,6 +219,6 @@ class ChangePasswordView(APIView):
             update_session_auth_hash(request, request.user)
             return api_response(True, "Password changed successfully")
         except ValidationError as exc:
-            return api_response(False, str(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
+            return api_response(False, format_validation_error(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
         except Exception as exc:
             return api_response(False, f"Unable to change password: {exc}", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)

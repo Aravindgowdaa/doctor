@@ -1,0 +1,269 @@
+{% extends "admin/base_site.html" %}
+{% load i18n log %}
+
+{% block title %}{% translate "Doctor Portal Admin" %}{% endblock %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <style>
+    .dp-dashboard {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+      align-items: start;
+    }
+
+    .dp-hero {
+      border-radius: 28px;
+      padding: 28px;
+      background:
+        radial-gradient(circle at top right, rgba(41, 211, 255, 0.16), transparent 30%),
+        linear-gradient(180deg, rgba(11, 18, 42, 0.96), rgba(10, 14, 34, 0.92));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 26px 70px rgba(0, 0, 0, 0.24);
+    }
+
+    .dp-hero__eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: rgba(232, 238, 252, 0.68);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .dp-hero__eyebrow::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #29d3ff, #6b5cff);
+      box-shadow: 0 0 18px rgba(41, 211, 255, 0.58);
+    }
+
+    .dp-hero h1 {
+      margin: 18px 0 12px;
+      font-size: clamp(2rem, 3vw, 3.2rem);
+      line-height: 1;
+      letter-spacing: -0.05em;
+    }
+
+    .dp-hero p {
+      margin: 0;
+      max-width: 60ch;
+      color: rgba(232, 238, 252, 0.7);
+      line-height: 1.7;
+    }
+
+    .dp-kpis {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 24px;
+    }
+
+    .dp-kpi {
+      padding: 18px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .dp-kpi strong {
+      display: block;
+      font-size: 1.3rem;
+      margin-bottom: 8px;
+    }
+
+    .dp-kpi span {
+      color: rgba(232, 238, 252, 0.65);
+      font-size: 0.92rem;
+    }
+
+    .dp-panel {
+      border-radius: 28px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(8, 13, 32, 0.84);
+      box-shadow: 0 26px 70px rgba(0, 0, 0, 0.22);
+      overflow: hidden;
+    }
+
+    .dp-panel__head {
+      padding: 20px 22px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .dp-panel__head h2 {
+      margin: 0;
+      font-size: 1.25rem;
+    }
+
+    .dp-panel__head p {
+      margin: 0;
+      color: rgba(232, 238, 252, 0.6);
+      font-size: 0.92rem;
+    }
+
+    .dp-grid {
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+    }
+
+    .dp-card {
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+      overflow: hidden;
+    }
+
+    .dp-card .module {
+      border: 0;
+      box-shadow: none;
+      background: transparent;
+      border-radius: 20px;
+    }
+
+    .dp-sidebar {
+      display: grid;
+      gap: 18px;
+      position: sticky;
+      top: 18px;
+    }
+
+    .dp-actions {
+      padding: 20px 22px;
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(8, 13, 32, 0.84);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
+    }
+
+    .dp-actions h3 {
+      margin: 0 0 10px;
+      font-size: 1.1rem;
+    }
+
+    .dp-actions p {
+      margin: 0;
+      color: rgba(232, 238, 252, 0.65);
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+
+    .actionlist li {
+      padding: 12px 0;
+    }
+
+    .actionlist a {
+      color: #8fd7ff;
+    }
+
+    @media (max-width: 1100px) {
+      .dp-dashboard {
+        grid-template-columns: 1fr;
+      }
+
+      .dp-sidebar {
+        position: static;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .dp-kpis {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+{% endblock %}
+
+{% block nav-sidebar %}{% endblock %}
+{% block nav-breadcrumbs %}{% endblock %}
+
+{% block content %}
+  <div class="dp-dashboard">
+    <section class="dp-hero">
+      <span class="dp-hero__eyebrow">Doctor Portal Control Center</span>
+      <h1>Manage users, doctors, appointments, and reviews from one polished workspace.</h1>
+      <p>
+        This admin area is tuned for the Doctor Portal project, with a dark glass interface and a quick-glance
+        workflow for everything that matters operationally.
+      </p>
+
+      <div class="dp-kpis" aria-hidden="true">
+        <div class="dp-kpi">
+          <strong>Patients</strong>
+          <span>Track accounts and moderation states.</span>
+        </div>
+        <div class="dp-kpi">
+          <strong>Doctors</strong>
+          <span>Approve, reject, and monitor profiles.</span>
+        </div>
+        <div class="dp-kpi">
+          <strong>Appointments</strong>
+          <span>Review bookings and payment status.</span>
+        </div>
+      </div>
+
+      <div class="dp-grid">
+        {% include "admin/app_list.html" with app_list=app_list show_changelinks=True %}
+      </div>
+    </section>
+
+    <aside class="dp-sidebar">
+      <div class="dp-actions">
+        <h3>Admin workflow</h3>
+        <p>
+          Use the left navigation to jump into doctor approvals, patient records, appointments, and notifications.
+          The interface keeps the same purple-blue product tone as the screenshots you shared.
+        </p>
+      </div>
+
+      <div class="dp-panel">
+        <div class="dp-panel__head">
+          <div>
+            <h2>Recent actions</h2>
+            <p>Your latest admin activity</p>
+          </div>
+        </div>
+        <div class="dp-grid">
+          {% get_admin_log 10 as admin_log for_user user %}
+          {% if not admin_log %}
+            <div class="dp-actions">
+              <p>None available yet.</p>
+            </div>
+          {% else %}
+            <ul class="actionlist">
+              {% for entry in admin_log %}
+                <li>
+                  {% if entry.is_deletion or not entry.get_admin_url %}
+                    {{ entry.object_repr }}
+                  {% else %}
+                    <a href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>
+                  {% endif %}
+                  <br>
+                  <span class="mini quiet">
+                    {% if entry.content_type %}
+                      {% filter capfirst %}{{ entry.content_type.name }}{% endfilter %}
+                    {% else %}
+                      Unknown content
+                    {% endif %}
+                  </span>
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </div>
+      </div>
+    </aside>
+  </div>
+{% endblock %}

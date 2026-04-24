@@ -19,9 +19,9 @@ const Receipt = ({ appointment }) => {
 
   return (
     <div className="space-y-4">
-      <div ref={receiptRef} className="rounded-3xl border border-slate-100 bg-white p-6">
+      <div ref={receiptRef} className="rounded-3xl border border-white/10 bg-[#07111f] p-6 text-white">
         <h3 className="text-2xl font-bold">Appointment Receipt</h3>
-        <div className="mt-4 grid gap-3 text-sm text-slate-600 md:grid-cols-2">
+        <div className="mt-4 grid gap-3 text-sm text-white/65 md:grid-cols-2">
           <p>Receipt ID: #{appointment.id}</p>
           <p>Date: {formatDate(appointment.date)}</p>
           <p>Doctor: Dr. {appointment.doctor?.name}</p>

@@ -1,9 +1,9 @@
 const Footer = () => (
-  <footer className="mt-20 border-t border-slate-200 bg-slate-950 py-12 text-slate-300">
+  <footer className="mt-20 border-t border-white/10 bg-[#03050e] py-12 text-white/70">
     <div className="container-app grid gap-10 md:grid-cols-4">
       <div>
         <h3 className="text-xl font-bold text-white">Doctor Portal</h3>
-        <p className="mt-3 text-sm leading-7 text-slate-400">
+        <p className="mt-3 text-sm leading-7 text-white/50">
           Book verified doctors, manage schedules, and keep patient care flowing through one production-ready portal.
         </p>
       </div>

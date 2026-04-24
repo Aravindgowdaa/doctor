@@ -32,7 +32,15 @@ const BookingModal = ({ open, onClose, doctor, date, slots, onBooked }) => {
         symptoms,
         notes,
       });
-      const { appointment, order, key } = data.data;
+      const { appointment, order, key, payment_required } = data.data;
+
+      if (!payment_required || !order || !key) {
+        toast.success(data.message || "Appointment booked successfully");
+        onBooked?.();
+        onClose();
+        return;
+      }
+
       const razorpay = new window.Razorpay({
         key,
         amount: order.amount,
@@ -52,7 +60,7 @@ const BookingModal = ({ open, onClose, doctor, date, slots, onBooked }) => {
           onClose();
         },
         theme: {
-          color: "#1165d6",
+          color: "#1d7ff2",
         },
       });
       razorpay.open();
@@ -67,22 +75,22 @@ const BookingModal = ({ open, onClose, doctor, date, slots, onBooked }) => {
     <Modal open={open} onClose={onClose} title="Book Appointment">
       <div className="space-y-5">
         <div>
-          <label className="label">Available Time Slots</label>
+          <label className="label text-white/75">Available Time Slots</label>
           <SlotPicker slots={slots} selectedSlot={timeSlot} onChange={setTimeSlot} />
         </div>
         <div>
-          <label className="label">Appointment Type</label>
+          <label className="label text-white/75">Appointment Type</label>
           <select className="input" value={appointmentType} onChange={(e) => setAppointmentType(e.target.value)}>
             <option value="in-clinic">In-clinic</option>
             <option value="online">Online</option>
           </select>
         </div>
         <div>
-          <label className="label">Symptoms</label>
+          <label className="label text-white/75">Symptoms</label>
           <textarea className="input min-h-24" value={symptoms} onChange={(e) => setSymptoms(e.target.value)} />
         </div>
         <div>
-          <label className="label">Notes</label>
+          <label className="label text-white/75">Notes</label>
           <textarea className="input min-h-24" value={notes} onChange={(e) => setNotes(e.target.value)} />
         </div>
         <button type="button" className="btn-primary w-full" disabled={loading} onClick={handleBook}>

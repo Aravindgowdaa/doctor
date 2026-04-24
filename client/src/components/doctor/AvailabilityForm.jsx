@@ -12,7 +12,7 @@ const AvailabilityForm = ({ initialSlots = [], onSubmit }) => {
   return (
     <div className="space-y-4">
       {slots.map((slot, index) => (
-        <div key={`${slot.day}-${index}`} className="grid gap-3 rounded-3xl border border-slate-100 p-4 md:grid-cols-4">
+        <div key={`${slot.day}-${index}`} className="grid gap-3 rounded-3xl border border-white/10 bg-white/5 p-4 md:grid-cols-4">
           <select className="input" value={slot.day} onChange={(e) => updateSlot(index, "day", e.target.value)}>
             {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
               <option key={day}>{day}</option>

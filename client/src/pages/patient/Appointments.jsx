@@ -50,9 +50,9 @@ const PatientAppointments = () => {
 
   return (
     <DashboardLayout role="patient" title="Your Appointments">
-      <div className="card overflow-x-auto">
+      <div className="card overflow-x-auto border-white/10 bg-white/5">
         <table className="min-w-full text-left text-sm">
-          <thead className="text-slate-500">
+          <thead className="text-white/50">
             <tr>
               <th className="pb-4">Doctor</th>
               <th className="pb-4">Date</th>
@@ -63,13 +63,13 @@ const PatientAppointments = () => {
           </thead>
           <tbody>
             {items.map((appointment) => (
-              <tr key={appointment.id} className="border-t border-slate-100">
-                <td className="py-4">Dr. {appointment.doctor?.name}</td>
-                <td className="py-4">{formatDate(appointment.date)} {appointment.time_slot}</td>
+              <tr key={appointment.id} className="border-t border-white/10">
+                <td className="py-4 text-white/80">Dr. {appointment.doctor?.name}</td>
+                <td className="py-4 text-white/70">{formatDate(appointment.date)} {appointment.time_slot}</td>
                 <td className="py-4">
                   <StatusBadge status={appointment.status} />
                 </td>
-                <td className="py-4">{appointment.payment_status}</td>
+                <td className="py-4 text-white/70">{appointment.payment_status}</td>
                 <td className="py-4">
                   <div className="flex flex-wrap gap-2">
                     <button type="button" className="btn-secondary !px-4 !py-2" onClick={() => setSelected(appointment)}>

@@ -6,7 +6,7 @@ const SlotPicker = ({ slots = [], selectedSlot, onChange }) => (
         type="button"
         onClick={() => onChange(slot)}
         className={`rounded-2xl border px-4 py-3 text-sm font-semibold ${
-          selectedSlot === slot ? "border-brand-600 bg-brand-50 text-brand-700" : "border-slate-200 bg-white text-slate-700"
+          selectedSlot === slot ? "border-brand-500 bg-brand-600 text-white shadow-soft" : "border-white/10 bg-white/5 text-white/75"
         }`}
       >
         {slot}

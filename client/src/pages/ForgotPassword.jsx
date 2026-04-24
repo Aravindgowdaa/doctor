@@ -40,24 +40,25 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div>
+    <div className="relative min-h-screen overflow-hidden bg-[#03050e] text-white">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(29,127,242,0.16),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(23,178,106,0.12),transparent_24%)]" />
       <Navbar />
-      <section className="container-app py-16">
-        <div className="mx-auto max-w-xl card space-y-5">
-          <h1 className="text-3xl font-bold">Forgot Password</h1>
+      <section className="container-app relative flex min-h-[calc(100vh-5rem)] items-center py-10">
+        <div className="mx-auto max-w-xl space-y-5 rounded-[28px] border border-white/10 bg-[#0b1220]/92 p-8 shadow-[0_24px_90px_rgba(0,0,0,0.45)] backdrop-blur-2xl">
+          <h1 className="text-3xl font-bold text-white">Forgot Password</h1>
           <div>
-            <label className="label">Email</label>
+            <label className="label text-white/75">Email</label>
             <input className="input" type="email" value={form.email} onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))} />
           </div>
           {step >= 2 && (
             <div>
-              <label className="label">OTP</label>
+              <label className="label text-white/75">OTP</label>
               <input className="input" value={form.otp} onChange={(e) => setForm((prev) => ({ ...prev, otp: e.target.value }))} />
             </div>
           )}
           {step >= 3 && (
             <div>
-              <label className="label">New Password</label>
+              <label className="label text-white/75">New Password</label>
               <input className="input" type="password" value={form.password} onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))} />
             </div>
           )}

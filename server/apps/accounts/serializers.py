@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers
 
+from config.cloudinary_utils import upload_file
 from apps.doctors.models import DoctorProfile
 
 from .models import PasswordResetOTP, User
@@ -25,6 +26,7 @@ class PatientRegisterSerializer(serializers.ModelSerializer):
 
 
 class DoctorRegisterSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField()
     password = serializers.CharField(write_only=True, min_length=8)
     dob = serializers.DateField(required=False, allow_null=True)
     specialization = serializers.CharField()
@@ -35,7 +37,7 @@ class DoctorRegisterSerializer(serializers.ModelSerializer):
     clinic_address = serializers.CharField()
     city = serializers.CharField()
     consultation_fee = serializers.DecimalField(max_digits=10, decimal_places=2)
-    profile_photo = serializers.URLField(required=False, allow_blank=True)
+    profile_photo = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
     class Meta:
         model = User
@@ -58,6 +60,7 @@ class DoctorRegisterSerializer(serializers.ModelSerializer):
         )
 
     def create(self, validated_data):
+        existing_user = User.objects.filter(email=validated_data["email"]).first()
         doctor_fields = {
             "specialization": validated_data.pop("specialization"),
             "qualification": validated_data.pop("qualification"),
@@ -67,11 +70,31 @@ class DoctorRegisterSerializer(serializers.ModelSerializer):
             "clinic_address": validated_data.pop("clinic_address"),
             "city": validated_data.pop("city"),
             "consultation_fee": validated_data.pop("consultation_fee"),
-            "profile_photo": validated_data.pop("profile_photo", ""),
             "email": validated_data["email"],
             "phone": validated_data["phone"],
         }
-        user = User.objects.create_user(role="doctor", **validated_data)
+        profile_photo = validated_data.pop("profile_photo", "")
+        if hasattr(profile_photo, "read"):
+            profile_photo = upload_file(profile_photo, "doctor-portal/doctors")
+        doctor_fields["profile_photo"] = profile_photo or ""
+
+        if existing_user:
+            if existing_user.role == "doctor":
+                raise serializers.ValidationError({"email": "A doctor account with this email already exists."})
+            if existing_user.role == "admin":
+                raise serializers.ValidationError({"email": "An admin account with this email already exists."})
+
+            existing_user.name = validated_data["name"]
+            existing_user.phone = validated_data["phone"]
+            existing_user.role = "doctor"
+            existing_user.gender = validated_data.get("gender", "")
+            existing_user.dob = validated_data.get("dob")
+            existing_user.set_password(validated_data["password"])
+            existing_user.save()
+            user = existing_user
+        else:
+            user = User.objects.create_user(role="doctor", **validated_data)
+
         DoctorProfile.objects.create(user=user, **doctor_fields)
         return user
 
@@ -79,20 +102,19 @@ class DoctorRegisterSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
-    role = serializers.ChoiceField(choices=User.ROLE_CHOICES)
+    role = serializers.ChoiceField(choices=User.ROLE_CHOICES, required=False)
 
     def validate(self, attrs):
         user = authenticate(email=attrs["email"], password=attrs["password"])
         if not user:
             raise serializers.ValidationError("Invalid email or password")
-        if user.role != attrs["role"]:
-            raise serializers.ValidationError("Role mismatch for this account")
         if user.is_blocked:
             raise serializers.ValidationError("This account has been blocked by admin")
         if user.role == "doctor":
             doctor_profile = getattr(user, "doctor_profile", None)
             if doctor_profile and not doctor_profile.is_approved:
                 raise serializers.ValidationError("Doctor account is pending admin approval")
+        attrs["role"] = user.role
         attrs["user"] = user
         return attrs
 

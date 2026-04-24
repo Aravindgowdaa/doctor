@@ -12,7 +12,7 @@ from django.conf import settings
 from config.email_utils import send_portal_email
 from config.permissions import IsDoctor, IsPatient
 from config.razorpay_client import client as razorpay_client
-from config.response import api_response
+from config.response import api_response, format_validation_error
 
 from apps.notifications.models import Notification
 
@@ -48,16 +48,33 @@ class BookAppointmentView(APIView):
                 status="pending",
                 payment_status="pending",
             )
-            razorpay_order = razorpay_client.order.create(
-                {
-                    "amount": int(float(doctor.consultation_fee) * 100),
-                    "currency": "INR",
-                    "receipt": f"appt_{appointment.id}",
-                    "payment_capture": 1,
-                }
-            )
-            appointment.razorpay_order_id = razorpay_order["id"]
-            appointment.save(update_fields=["razorpay_order_id"])
+
+            payment_configured = bool(settings.RAZORPAY_KEY_ID and settings.RAZORPAY_KEY_SECRET)
+            razorpay_order = None
+            response_message = "Appointment created successfully"
+
+            if payment_configured:
+                try:
+                    razorpay_order = razorpay_client.order.create(
+                        {
+                            "amount": int(float(doctor.consultation_fee) * 100),
+                            "currency": "INR",
+                            "receipt": f"appt_{appointment.id}",
+                            "payment_capture": 1,
+                        }
+                    )
+                    appointment.razorpay_order_id = razorpay_order["id"]
+                    appointment.save(update_fields=["razorpay_order_id"])
+                    response_message = "Appointment created and Razorpay order generated"
+                except Exception:
+                    payment_configured = False
+
+            if not payment_configured:
+                appointment.status = "confirmed"
+                appointment.payment_status = "pending"
+                appointment.save(update_fields=["status", "payment_status"])
+                response_message = "Appointment booked successfully. Payment gateway is not configured, so payment was skipped."
+
             Notification.objects.bulk_create(
                 [
                     Notification(
@@ -74,18 +91,16 @@ class BookAppointmentView(APIView):
                     ),
                 ]
             )
-            return api_response(
-                True,
-                "Appointment created and Razorpay order generated",
-                {
-                    "appointment": AppointmentSerializer(appointment).data,
-                    "order": razorpay_order,
-                    "key": settings.RAZORPAY_KEY_ID,
-                },
-                status.HTTP_201_CREATED,
-            )
+            payload = {
+                "appointment": AppointmentSerializer(appointment).data,
+                "payment_required": payment_configured and razorpay_order is not None,
+            }
+            if razorpay_order is not None:
+                payload["order"] = razorpay_order
+                payload["key"] = settings.RAZORPAY_KEY_ID
+            return api_response(True, response_message, payload, status.HTTP_201_CREATED)
         except ValidationError as exc:
-            return api_response(False, str(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
+            return api_response(False, format_validation_error(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
         except Exception as exc:
             return api_response(False, f"Unable to book appointment: {exc}", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -137,7 +152,7 @@ class VerifyPaymentView(APIView):
             )
             return api_response(True, "Payment verified successfully", {"appointment": AppointmentSerializer(appointment).data})
         except ValidationError as exc:
-            return api_response(False, str(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
+            return api_response(False, format_validation_error(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
         except Appointment.DoesNotExist:
             return api_response(False, "Appointment not found", status_code=status.HTTP_404_NOT_FOUND)
         except Exception as exc:
@@ -204,7 +219,7 @@ class AppointmentStatusUpdateView(APIView):
             )
             return api_response(True, "Appointment status updated successfully", {"appointment": AppointmentSerializer(appointment).data})
         except ValidationError as exc:
-            return api_response(False, str(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
+            return api_response(False, format_validation_error(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
         except Appointment.DoesNotExist:
             return api_response(False, "Appointment not found", status_code=status.HTTP_404_NOT_FOUND)
         except Exception as exc:
@@ -270,6 +285,6 @@ class AvailableSlotsView(APIView):
             available_slots = [slot for slot in slots if slot not in booked_slots]
             return api_response(True, "Available slots fetched successfully", {"slots": available_slots})
         except ValidationError as exc:
-            return api_response(False, str(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
+            return api_response(False, format_validation_error(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
         except Exception as exc:
             return api_response(False, f"Unable to fetch slots: {exc}", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)

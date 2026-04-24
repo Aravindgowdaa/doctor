@@ -3,20 +3,20 @@ import { FiClock, FiExternalLink, FiMapPin, FiStar } from "react-icons/fi";
 const InfoWindowCard = ({ doctor, onBook, onViewProfile }) => (
   <div className="w-[250px] space-y-3 p-1">
     <div>
-      <h3 className="text-base font-bold text-slate-900">{doctor.name}</h3>
-      <p className="mt-1 text-xs leading-5 text-slate-500">{doctor.address}</p>
+      <h3 className="text-base font-bold text-white">{doctor.name}</h3>
+      <p className="mt-1 text-xs leading-5 text-white/45">{doctor.address}</p>
     </div>
-    <div className="space-y-2 text-xs text-slate-600">
+    <div className="space-y-2 text-xs text-white/65">
       <p className="inline-flex items-center gap-2">
-        <FiStar className="text-amber-500" />
+        <FiStar className="text-amber-300" />
         {doctor.rating ? `${doctor.rating} rating` : "No rating yet"}
       </p>
       <p className="inline-flex items-center gap-2">
-        <FiClock className={doctor.isOpen ? "text-emerald-500" : "text-rose-500"} />
+        <FiClock className={doctor.isOpen ? "text-emerald-300" : "text-rose-300"} />
         {doctor.openStatus}
       </p>
       <p className="inline-flex items-center gap-2">
-        <FiMapPin className="text-brand-700" />
+        <FiMapPin className="text-brand-300" />
         {doctor.distanceText}
       </p>
     </div>
