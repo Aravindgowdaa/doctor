@@ -79,6 +79,10 @@ class VerifyPaymentSerializer(serializers.Serializer):
     razorpay_signature = serializers.CharField()
 
 
+class ManualPaymentSerializer(serializers.Serializer):
+    appointment_id = serializers.IntegerField()
+
+
 class AppointmentStatusSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=Appointment.STATUS_CHOICES)
 

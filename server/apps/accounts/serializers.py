@@ -108,6 +108,11 @@ class LoginSerializer(serializers.Serializer):
         user = authenticate(email=attrs["email"], password=attrs["password"])
         if not user:
             raise serializers.ValidationError("Invalid email or password")
+        selected_role = attrs.get("role")
+        if selected_role and selected_role != user.role:
+            raise serializers.ValidationError(
+                f"This account is registered as {user.role}. Please choose the {user.role} login tab."
+            )
         if user.is_blocked:
             raise serializers.ValidationError("This account has been blocked by admin")
         if user.role == "doctor":

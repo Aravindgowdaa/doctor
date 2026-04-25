@@ -37,3 +37,4 @@ staticfiles/
 
 # Upload/media
 media/
+server/tmp_frames/

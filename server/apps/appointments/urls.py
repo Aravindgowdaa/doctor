@@ -6,6 +6,7 @@ from .views import (
     AvailableSlotsView,
     BookAppointmentView,
     DoctorAppointmentsView,
+    ManualPaymentConfirmView,
     PatientAppointmentsView,
     VerifyPaymentView,
 )
@@ -13,6 +14,7 @@ from .views import (
 urlpatterns = [
     path("book", BookAppointmentView.as_view()),
     path("verify-payment", VerifyPaymentView.as_view()),
+    path("manual-payment-confirm", ManualPaymentConfirmView.as_view()),
     path("patient", PatientAppointmentsView.as_view()),
     path("doctor", DoctorAppointmentsView.as_view()),
     path("<int:pk>/status", AppointmentStatusUpdateView.as_view()),

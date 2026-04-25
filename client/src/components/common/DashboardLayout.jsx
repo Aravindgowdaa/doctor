@@ -25,6 +25,12 @@ const menus = {
   ],
 };
 
+const portalLabelByRole = {
+  patient: "Patient Portal",
+  doctor: "Doctor Portal",
+  admin: "Admin Portal",
+};
+
 const DashboardLayout = ({ role, title, children }) => (
   <div className="min-h-screen bg-[#050816] text-white">
     <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(29,127,242,0.14),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(23,178,106,0.1),transparent_24%)]" />
@@ -32,7 +38,7 @@ const DashboardLayout = ({ role, title, children }) => (
     <div className="container-app grid gap-8 py-10 lg:grid-cols-[280px,1fr]">
       <aside className="h-fit rounded-[28px] border border-white/10 bg-[#0b1220]/95 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-2xl">
         <Link to="/" className="mb-6 block text-xs font-semibold uppercase tracking-[0.2em] text-white/45">
-          {role === "patient" ? "Patient Portal" : "Doctor Portal"}
+          {portalLabelByRole[role] || "Portal"}
         </Link>
         <div className="space-y-2">
           {menus[role].map((item) => (

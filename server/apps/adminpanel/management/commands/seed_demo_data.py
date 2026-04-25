@@ -6,10 +6,9 @@ from django.utils import timezone
 
 from apps.accounts.models import User
 from apps.appointments.models import Appointment
-from apps.doctors.models import DoctorProfile
+from apps.doctors.models import DoctorProfile, WeeklyAvailability
 from apps.notifications.models import Notification
 from apps.reviews.models import Review
-from apps.doctors.models import WeeklyAvailability
 
 
 DEMO_DOCTORS = [
@@ -93,7 +92,7 @@ DEMO_DOCTORS = [
         "specialization": "Gynecologist",
         "qualification": "MBBS, DGO",
         "experience": 10,
-        "bio": "Provides women’s health consultation, pregnancy care, and routine checkups.",
+        "bio": "Provides women's health consultation, pregnancy care, and routine checkups.",
         "clinic_name": "Women First Clinic",
         "clinic_address": "C Scheme, Jaipur",
         "city": "Jaipur",
@@ -208,7 +207,6 @@ class Command(BaseCommand):
             "consultation_fee": payload["consultation_fee"],
             "phone": payload["phone"],
             "email": payload["email"],
-            "profile_photo": "",
             "is_approved": True,
             "is_rejected": False,
             "average_rating": payload["average_rating"],

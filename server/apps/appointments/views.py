@@ -21,6 +21,7 @@ from .serializers import (
     AppointmentSerializer,
     AppointmentStatusSerializer,
     BookAppointmentSerializer,
+    ManualPaymentSerializer,
     SlotQuerySerializer,
     VerifyPaymentSerializer,
     build_slots,
@@ -157,6 +158,56 @@ class VerifyPaymentView(APIView):
             return api_response(False, "Appointment not found", status_code=status.HTTP_404_NOT_FOUND)
         except Exception as exc:
             return api_response(False, f"Unable to verify payment: {exc}", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ManualPaymentConfirmView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsPatient]
+
+    @transaction.atomic
+    def post(self, request):
+        try:
+            serializer = ManualPaymentSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            appointment = Appointment.objects.select_related("doctor__user", "patient").get(
+                id=serializer.validated_data["appointment_id"], patient=request.user
+            )
+            if appointment.payment_status == "paid":
+                return api_response(True, "Payment already confirmed", {"appointment": AppointmentSerializer(appointment).data})
+
+            appointment.payment_status = "paid"
+            appointment.status = "confirmed"
+            appointment.save(update_fields=["payment_status", "status"])
+            appointment.doctor.total_bookings += 1
+            appointment.doctor.save(update_fields=["total_bookings"])
+
+            Notification.objects.bulk_create(
+                [
+                    Notification(
+                        user=appointment.patient,
+                        title="Appointment confirmed",
+                        message=f"Your appointment with Dr. {appointment.doctor.user.name} is confirmed.",
+                        type="appointment",
+                    ),
+                    Notification(
+                        user=appointment.doctor.user,
+                        title="Appointment paid",
+                        message=f"{appointment.patient.name} completed payment for {appointment.date} at {appointment.time_slot}.",
+                        type="appointment",
+                    ),
+                ]
+            )
+            send_portal_email(
+                "Appointment Confirmed",
+                f"Your appointment with Dr. {appointment.doctor.user.name} is confirmed for {appointment.date} at {appointment.time_slot}.",
+                [appointment.patient.email],
+            )
+            return api_response(True, "Payment confirmed successfully", {"appointment": AppointmentSerializer(appointment).data})
+        except ValidationError as exc:
+            return api_response(False, format_validation_error(exc.detail), status_code=status.HTTP_400_BAD_REQUEST)
+        except Appointment.DoesNotExist:
+            return api_response(False, "Appointment not found", status_code=status.HTTP_404_NOT_FOUND)
+        except Exception as exc:
+            return api_response(False, f"Unable to confirm payment: {exc}", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class PatientAppointmentsView(APIView):
