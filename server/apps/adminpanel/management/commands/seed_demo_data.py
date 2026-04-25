@@ -173,8 +173,7 @@ class Command(BaseCommand):
                 "is_blocked": False,
             },
         )
-        if not user.has_usable_password():
-            user.set_password(password)
+        user.set_password(password)
         if not user_created:
             user.name = payload["name"]
             user.phone = payload["phone"]
@@ -227,8 +226,7 @@ class Command(BaseCommand):
                 "is_blocked": False,
             },
         )
-        if not user.has_usable_password():
-            user.set_password(password)
+        user.set_password(password)
         if not user_created:
             user.name = payload["name"]
             user.phone = payload["phone"]
