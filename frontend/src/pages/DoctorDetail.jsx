@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { FiMapPin, FiPhone, FiStar } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import BookingModal from "../components/appointment/BookingModal";
 import Footer from "../components/common/Footer";
@@ -15,8 +15,10 @@ import { formatCurrency, getDoctorAvatarUrl } from "../utils/helpers";
 
 const DoctorDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const { selectedDoctor: doctor, loading } = useSelector((state) => state.doctors);
+  const { user } = useSelector((state) => state.auth);
   const [reviews, setReviews] = useState([]);
   const [date, setDate] = useState("");
   const [slots, setSlots] = useState([]);
@@ -36,6 +38,7 @@ const DoctorDetail = () => {
   }, [date, doctor]);
 
   const blockedDates = useMemo(() => new Set((doctor?.blocked_dates || []).map((item) => item.date)), [doctor]);
+  const isPatient = user?.role === "patient";
 
   if (loading || !doctor) return <Loader text="Loading doctor profile..." />;
 
@@ -114,9 +117,15 @@ const DoctorDetail = () => {
               <label className="label text-white/75">Available Slots</label>
               <p className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/72">{slots.length ? `${slots.length} slots available` : "Select a date to load slots."}</p>
             </div>
-            <button type="button" className="btn-primary w-full" disabled={!date || !slots.length} onClick={() => setOpenBooking(true)}>
-              Continue to Pay
-            </button>
+            {isPatient ? (
+              <button type="button" className="btn-primary w-full" disabled={!date || !slots.length} onClick={() => setOpenBooking(true)}>
+                Continue to Pay
+              </button>
+            ) : (
+              <button type="button" className="btn-secondary w-full" onClick={() => navigate("/login")}>
+                Login as Patient to Continue
+              </button>
+            )}
           </div>
         </div>
       </section>

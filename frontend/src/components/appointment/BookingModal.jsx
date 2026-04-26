@@ -81,9 +81,9 @@ const BookingModal = ({ open, onClose, doctor, date, slots, onBooked }) => {
       {paymentDone ? (
         <div className="space-y-4">
           <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-4">
-            <h3 className="text-xl font-bold text-emerald-200">Appointment Booked</h3>
+            <h3 className="text-xl font-bold text-emerald-200">Appointment Done</h3>
             <p className="mt-1 text-sm text-emerald-100/80">
-              Thank you for your appointment. Your booking is confirmed.
+              Your appointment has done successfully and is now visible in doctor appointments.
             </p>
           </div>
 
@@ -113,10 +113,10 @@ const BookingModal = ({ open, onClose, doctor, date, slots, onBooked }) => {
             </p>
           </div>
           <div className="overflow-hidden rounded-2xl border border-white/10 bg-black p-2">
-            <img src="/payment-qr.jpeg" alt="PhonePe QR code" className="w-full rounded-xl" />
+            <img src="/payment-qr.jpeg" alt="PhonePe QR code" className="max-h-[52vh] w-full rounded-xl object-contain" />
           </div>
           <p className="text-xs text-white/55">
-            Scan and pay the exact amount, then click "I Have Paid" to confirm your appointment.
+            Scan and pay the exact amount, then click "Payment Done" to confirm your appointment.
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
             <button
@@ -125,7 +125,7 @@ const BookingModal = ({ open, onClose, doctor, date, slots, onBooked }) => {
               onClick={confirmQrPayment}
               disabled={confirmingPayment}
             >
-              {confirmingPayment ? "Confirming..." : "I Have Paid"}
+              {confirmingPayment ? "Confirming..." : "Payment Done"}
             </button>
             <button
               type="button"

@@ -134,5 +134,12 @@ export const haversineDistance = (from, to) => {
   return Number((earthRadiusKm * c).toFixed(1));
 };
 
-export const getGoogleMapsApiKey = () =>
-  import.meta.env.VITE_GOOGLE_MAPS_API_KEY || import.meta.env.REACT_APP_GOOGLE_MAPS_API_KEY || "";
+export const getGoogleMapsApiKey = () => {
+  const rawKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || import.meta.env.REACT_APP_GOOGLE_MAPS_API_KEY || "";
+  const key = String(rawKey).trim();
+  const blockedValues = new Set(["", "your_key_here", "your_api_key", "google_maps_api_key"]);
+  if (blockedValues.has(key.toLowerCase())) {
+    return "";
+  }
+  return key;
+};

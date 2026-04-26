@@ -12,7 +12,7 @@ import NearbyDoctorsList from "../components/doctor/NearbyDoctorsList";
 import axiosInstance from "../utils/axiosInstance";
 import { getGoogleMapsApiKey, haversineDistance, normalizeText } from "../utils/helpers";
 
-const searchQueries = ["doctors near me", "clinics near me", "hospitals near me"];
+const searchQueries = ["hospitals near me", "clinics near me", "doctors near me"];
 const defaultCenter = { lat: 19.076, lng: 72.8777 };
 
 const fallbackPlaces = [
@@ -102,14 +102,59 @@ const dedupePlaces = (places) => {
   return Array.from(byId.values());
 };
 
+const runTextSearch = (service, location, radius, query) =>
+  new Promise((resolve, reject) => {
+    service.textSearch(
+      {
+        location,
+        radius,
+        query,
+      },
+      (results, status) => {
+        if (status === window.google.maps.places.PlacesServiceStatus.OK) {
+          resolve(results || []);
+          return;
+        }
+        if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+          resolve([]);
+          return;
+        }
+        reject(new Error(`Google Places error: ${status}`));
+      }
+    );
+  });
+
+const runNearbyHospitalSearch = (service, location, radius) =>
+  new Promise((resolve, reject) => {
+    service.nearbySearch(
+      {
+        location,
+        radius,
+        type: "hospital",
+        keyword: "hospital",
+      },
+      (results, status) => {
+        if (status === window.google.maps.places.PlacesServiceStatus.OK) {
+          resolve(results || []);
+          return;
+        }
+        if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+          resolve([]);
+          return;
+        }
+        reject(new Error(`Google Places hospital search error: ${status}`));
+      }
+    );
+  });
+
 const NearbyDoctors = () => {
   const navigate = useNavigate();
   const apiKey = getGoogleMapsApiKey();
   const [map, setMap] = useState(null);
-  const [location, setLocation] = useState(null);
+  const [location, setLocation] = useState(defaultCenter);
   const [allDoctors, setAllDoctors] = useState([]);
   const [dbDoctors, setDbDoctors] = useState([]);
-  const [loadingLocation, setLoadingLocation] = useState(true);
+  const [loadingLocation, setLoadingLocation] = useState(false);
   const [loadingPlaces, setLoadingPlaces] = useState(false);
   const [selectedDoctorId, setSelectedDoctorId] = useState(null);
   const [error, setError] = useState("");
@@ -126,12 +171,11 @@ const NearbyDoctors = () => {
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      setLocation(defaultCenter);
       setError("Geolocation is not supported on this browser.");
-      setLoadingLocation(false);
       return;
     }
 
+    setLoadingLocation(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setLocation({
@@ -141,7 +185,6 @@ const NearbyDoctors = () => {
         setLoadingLocation(false);
       },
       () => {
-        setLocation(defaultCenter);
         setError("Location permission denied. Showing nearby results from the default city center.");
         setLoadingLocation(false);
       },
@@ -185,32 +228,14 @@ const NearbyDoctors = () => {
 
     try {
       const service = new window.google.maps.places.PlacesService(map);
-      const searches = searchQueries.map(
-        (query) =>
-          new Promise((resolve, reject) => {
-            service.textSearch(
-              {
-                location,
-                radius: Number(filters.maxDistance) * 1000,
-                query,
-              },
-              (results, status) => {
-                if (status === window.google.maps.places.PlacesServiceStatus.OK) {
-                  resolve(results || []);
-                  return;
-                }
-                if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-                  resolve([]);
-                  return;
-                }
-                reject(new Error(`Google Places error: ${status}`));
-              }
-            );
-          })
-      );
+      const radius = Number(filters.maxDistance) * 1000;
+      const textSearches = searchQueries.map((query) => runTextSearch(service, location, radius, query));
+      const [hospitalPlaces, ...textPlaceGroups] = await Promise.all([
+        runNearbyHospitalSearch(service, location, radius),
+        ...textSearches,
+      ]);
 
-      const settled = await Promise.all(searches);
-      const merged = dedupePlaces(settled.flat()).map((place) => {
+      const merged = dedupePlaces([hospitalPlaces, ...textPlaceGroups].flat()).map((place) => {
         const lat = place.geometry?.location?.lat?.() || 0;
         const lng = place.geometry?.location?.lng?.() || 0;
         const distance = haversineDistance(location, { lat, lng });
@@ -245,7 +270,10 @@ const NearbyDoctors = () => {
         setSelectedDoctorId(merged[0].placeId);
       }
     } catch (searchError) {
-      setError(searchError.message || "Unable to search nearby places right now.");
+      const demoPlaces = buildFallbackPlaces(dbDoctors, location);
+      setAllDoctors(demoPlaces);
+      setSelectedDoctorId(demoPlaces[0]?.placeId || null);
+      setError(searchError.message || "Unable to search nearby places right now. Showing local preview instead.");
     } finally {
       setLoadingPlaces(false);
     }

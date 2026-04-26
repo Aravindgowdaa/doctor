@@ -15,8 +15,16 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const payload = {
+      email: form.email.trim().toLowerCase(),
+      password: form.password.trim(),
+    };
+    if (!payload.email || !payload.password) {
+      toast.error("Enter email and password");
+      return;
+    }
     try {
-      const user = await dispatch(loginUser({ ...form, role })).unwrap();
+      const user = await dispatch(loginUser(payload)).unwrap();
       toast.success("Login successful");
       navigate(getDashboardPath(user.role));
     } catch (error) {

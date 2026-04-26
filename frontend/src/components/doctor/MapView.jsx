@@ -83,7 +83,7 @@ const MapView = ({
           )}
         </div>
         <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-white/50">
-          Add `VITE_GOOGLE_MAPS_API_KEY` in `client/.env` to load the live interactive map.
+          Add `VITE_GOOGLE_MAPS_API_KEY` in `frontend/.env` to load the live interactive map.
         </div>
       </div>
     );

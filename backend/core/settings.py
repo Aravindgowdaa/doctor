@@ -98,10 +98,20 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CLIENT_URL = os.getenv("CLIENT_URL", "http://localhost:3000")
+extra_client_origins = [
+    origin.strip()
+    for origin in os.getenv("CLIENT_URLS", "").split(",")
+    if origin.strip()
+]
 LOCAL_CLIENT_ORIGINS = [
     CLIENT_URL,
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3001",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    *extra_client_origins,
 ]
 CORS_ALLOWED_ORIGINS = list(dict.fromkeys(LOCAL_CLIENT_ORIGINS))
 CORS_ALLOW_CREDENTIALS = True
