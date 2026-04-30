@@ -2,12 +2,21 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import axiosInstance from "../../utils/axiosInstance";
 
+const getErrorMessage = (error, fallback) => {
+  const serverMessage = error?.response?.data?.message;
+  if (serverMessage) return serverMessage;
+  if (error?.code === "ERR_NETWORK") {
+    return "Cannot reach backend server. Please check API URL and that backend is running.";
+  }
+  return error?.message || fallback;
+};
+
 export const fetchMe = createAsyncThunk("auth/fetchMe", async (_, thunkAPI) => {
   try {
     const { data } = await axiosInstance.get("/auth/me");
     return data.data.user;
   } catch (error) {
-    return thunkAPI.rejectWithValue(error.response?.data?.message || "Failed to fetch profile");
+    return thunkAPI.rejectWithValue(getErrorMessage(error, "Failed to fetch profile"));
   }
 });
 
@@ -16,7 +25,7 @@ export const loginUser = createAsyncThunk("auth/loginUser", async (payload, thun
     const { data } = await axiosInstance.post("/auth/login", payload);
     return data.data.user;
   } catch (error) {
-    return thunkAPI.rejectWithValue(error.response?.data?.message || "Login failed");
+    return thunkAPI.rejectWithValue(getErrorMessage(error, "Login failed"));
   }
 });
 
@@ -24,7 +33,7 @@ export const logoutUser = createAsyncThunk("auth/logoutUser", async (_, thunkAPI
   try {
     await axiosInstance.post("/auth/logout");
   } catch (error) {
-    return thunkAPI.rejectWithValue(error.response?.data?.message || "Logout failed");
+    return thunkAPI.rejectWithValue(getErrorMessage(error, "Logout failed"));
   }
 });
 

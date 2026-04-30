@@ -5,6 +5,9 @@ import sys
 
 def main():
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
+    # Use a safe default port when no explicit host/port is provided.
+    if len(sys.argv) == 2 and sys.argv[1] == "runserver":
+        sys.argv.append("127.0.0.1:8080")
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

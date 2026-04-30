@@ -6,7 +6,7 @@ import { formatCurrency, formatDate } from "../../utils/helpers";
 import Modal from "../common/Modal";
 import SlotPicker from "../doctor/SlotPicker";
 
-const BookingModal = ({ open, onClose, doctor, date, slots, onBooked }) => {
+const BookingModal = ({ open, onClose, doctor, date, slots, initialSlot = "", onBooked }) => {
   const [timeSlot, setTimeSlot] = useState("");
   const [appointmentType, setAppointmentType] = useState("in-clinic");
   const [symptoms, setSymptoms] = useState("");
@@ -30,6 +30,12 @@ const BookingModal = ({ open, onClose, doctor, date, slots, onBooked }) => {
       setPaymentDone(false);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (open) {
+      setTimeSlot(initialSlot || "");
+    }
+  }, [open, initialSlot]);
 
   const handleBook = async () => {
     if (!timeSlot) {

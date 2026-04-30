@@ -7,12 +7,9 @@ import Footer from "../components/common/Footer";
 import Loader from "../components/common/Loader";
 import Modal from "../components/common/Modal";
 import Navbar from "../components/common/Navbar";
-import MapView from "../components/doctor/MapView";
 import NearbyDoctorsList from "../components/doctor/NearbyDoctorsList";
 import axiosInstance from "../utils/axiosInstance";
-import { getGoogleMapsApiKey, haversineDistance, normalizeText } from "../utils/helpers";
 
-const searchQueries = ["hospitals near me", "clinics near me", "doctors near me"];
 const defaultCenter = { lat: 19.076, lng: 72.8777 };
 
 const fallbackPlaces = [
@@ -44,6 +41,16 @@ const fallbackPlaces = [
     offsetLng: -0.006,
   },
 ];
+
+const dedupePlaces = (places) => {
+  const byId = new Map();
+  places.forEach((place) => {
+    const key = place?.placeId;
+    if (!key || byId.has(key)) return;
+    byId.set(key, place);
+  });
+  return Array.from(byId.values());
+};
 
 const buildFallbackPlaces = (doctors, location = defaultCenter) => {
   const doctorPlaces = doctors
@@ -92,65 +99,8 @@ const buildFallbackPlaces = (doctors, location = defaultCenter) => {
   return dedupePlaces([...doctorPlaces, ...nearbyPlaces]);
 };
 
-const dedupePlaces = (places) => {
-  const byId = new Map();
-  places.forEach((place) => {
-    const key = place?.place_id || place?.placeId;
-    if (!key || byId.has(key)) return;
-    byId.set(key, place);
-  });
-  return Array.from(byId.values());
-};
-
-const runTextSearch = (service, location, radius, query) =>
-  new Promise((resolve, reject) => {
-    service.textSearch(
-      {
-        location,
-        radius,
-        query,
-      },
-      (results, status) => {
-        if (status === window.google.maps.places.PlacesServiceStatus.OK) {
-          resolve(results || []);
-          return;
-        }
-        if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-          resolve([]);
-          return;
-        }
-        reject(new Error(`Google Places error: ${status}`));
-      }
-    );
-  });
-
-const runNearbyHospitalSearch = (service, location, radius) =>
-  new Promise((resolve, reject) => {
-    service.nearbySearch(
-      {
-        location,
-        radius,
-        type: "hospital",
-        keyword: "hospital",
-      },
-      (results, status) => {
-        if (status === window.google.maps.places.PlacesServiceStatus.OK) {
-          resolve(results || []);
-          return;
-        }
-        if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-          resolve([]);
-          return;
-        }
-        reject(new Error(`Google Places hospital search error: ${status}`));
-      }
-    );
-  });
-
 const NearbyDoctors = () => {
   const navigate = useNavigate();
-  const apiKey = getGoogleMapsApiKey();
-  const [map, setMap] = useState(null);
   const [location, setLocation] = useState(defaultCenter);
   const [allDoctors, setAllDoctors] = useState([]);
   const [dbDoctors, setDbDoctors] = useState([]);
@@ -161,6 +111,11 @@ const NearbyDoctors = () => {
   const [filters, setFilters] = useState({ rating: "0", maxDistance: "10" });
   const [externalDoctor, setExternalDoctor] = useState(null);
   const [externalForm, setExternalForm] = useState({ name: "", email: "", phone: "", appointmentDate: "", notes: "" });
+
+  const nearbyHospitalMapUrl = useMemo(
+    () => `https://www.google.com/maps/search/hospitals+near+me/@${location.lat},${location.lng},13z?entry=ttu`,
+    [location.lat, location.lng]
+  );
 
   useEffect(() => {
     axiosInstance
@@ -192,103 +147,18 @@ const NearbyDoctors = () => {
     );
   }, []);
 
-  const matchDbDoctor = useCallback(
-    (place) => {
-      const placeName = normalizeText(place.name);
-      const vicinity = normalizeText(`${place.formatted_address || ""} ${place.vicinity || ""}`);
-      return (
-        dbDoctors.find((doctor) => {
-          const dbName = normalizeText(doctor.user?.name);
-          const dbSpecialization = normalizeText(doctor.specialization);
-          const dbCity = normalizeText(doctor.city);
-          return (
-            (placeName.includes(dbName) || dbName.includes(placeName) || placeName.includes(dbSpecialization)) &&
-            (!dbCity || vicinity.includes(dbCity))
-          );
-        }) || null
-      );
-    },
-    [dbDoctors]
-  );
-
-  const searchNearby = useCallback(async () => {
-    if (!location) return;
-
-    if (!apiKey || !map || !window.google?.maps?.places) {
-      const demoPlaces = buildFallbackPlaces(dbDoctors, location);
-      setAllDoctors(demoPlaces);
-      setSelectedDoctorId(demoPlaces[0]?.placeId || null);
-      setError("Showing demo nearby doctors and clinics. Add a Google Maps API key to load live nearby results.");
-      setLoadingPlaces(false);
-      return;
-    }
-
+  const searchNearby = useCallback(() => {
     setLoadingPlaces(true);
     setError("");
-
-    try {
-      const service = new window.google.maps.places.PlacesService(map);
-      const radius = Number(filters.maxDistance) * 1000;
-      const textSearches = searchQueries.map((query) => runTextSearch(service, location, radius, query));
-      const [hospitalPlaces, ...textPlaceGroups] = await Promise.all([
-        runNearbyHospitalSearch(service, location, radius),
-        ...textSearches,
-      ]);
-
-      const merged = dedupePlaces([hospitalPlaces, ...textPlaceGroups].flat()).map((place) => {
-        const lat = place.geometry?.location?.lat?.() || 0;
-        const lng = place.geometry?.location?.lng?.() || 0;
-        const distance = haversineDistance(location, { lat, lng });
-        const dbDoctor = matchDbDoctor(place);
-
-        return {
-          placeId: place.place_id || place.placeId,
-          name: place.name,
-          address: place.formatted_address || place.vicinity || "Address unavailable",
-          rating: place.rating || null,
-          isOpen: typeof place.opening_hours?.isOpen === "function" ? place.opening_hours.isOpen() : null,
-          openStatus:
-            typeof place.opening_hours?.isOpen === "function"
-              ? place.opening_hours.isOpen()
-                ? "Open now"
-                : "Closed now"
-              : "Hours unavailable",
-          location: { lat, lng },
-          distance,
-          distanceText: distance ? `${distance} km away` : "Distance unavailable",
-          dbDoctor,
-          placeUrl: place.url || "",
-        };
-      });
-
-      if (!merged.length) {
-        setError("No nearby doctors, clinics, or hospitals found in this area.");
-      }
-
-      setAllDoctors(merged);
-      if (merged[0]) {
-        setSelectedDoctorId(merged[0].placeId);
-      }
-    } catch (searchError) {
-      const demoPlaces = buildFallbackPlaces(dbDoctors, location);
-      setAllDoctors(demoPlaces);
-      setSelectedDoctorId(demoPlaces[0]?.placeId || null);
-      setError(searchError.message || "Unable to search nearby places right now. Showing local preview instead.");
-    } finally {
-      setLoadingPlaces(false);
-    }
-  }, [apiKey, dbDoctors, filters.maxDistance, location, map, matchDbDoctor]);
+    const previewPlaces = buildFallbackPlaces(dbDoctors, location);
+    setAllDoctors(previewPlaces);
+    setSelectedDoctorId(previewPlaces[0]?.placeId || null);
+    setLoadingPlaces(false);
+  }, [dbDoctors, location]);
 
   useEffect(() => {
     searchNearby();
   }, [searchNearby]);
-
-  useEffect(() => {
-    if (apiKey || !location || !dbDoctors.length) return;
-    const demoPlaces = buildFallbackPlaces(dbDoctors, location);
-    setAllDoctors(demoPlaces);
-    setSelectedDoctorId(demoPlaces[0]?.placeId || null);
-  }, [apiKey, dbDoctors, location]);
 
   const filteredDoctors = useMemo(
     () =>
@@ -358,53 +228,46 @@ const NearbyDoctors = () => {
           </div>
         )}
 
-        <div className="grid gap-6 lg:grid-cols-[420px,1fr]">
-          <div className="space-y-4">
-            <motion.div
-              initial={{ opacity: 0, x: -16 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="rounded-3xl border border-white/10 bg-[#0b1220]/95 p-5 shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-2xl"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-white/50">Results</p>
-                  <h2 className="text-2xl font-bold text-white">{filteredDoctors.length} nearby places</h2>
-                </div>
-                <button type="button" className="btn-secondary !px-4 !py-2" onClick={searchNearby}>
-                  Refresh
-                </button>
+        <div className="space-y-6">
+          <motion.div
+            initial={{ opacity: 0, x: -16 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="rounded-3xl border border-white/10 bg-[#0b1220]/95 p-5 shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-2xl"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-white/50">Results</p>
+                <h2 className="text-2xl font-bold text-white">{filteredDoctors.length} nearby places</h2>
               </div>
-              <div className="mt-4 grid grid-cols-3 gap-3 text-xs text-white/60">
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
-                  <p className="text-white/35">Doctors</p>
-                  <p className="mt-1 text-lg font-bold text-white">{filteredDoctors.filter((doctor) => doctor.dbDoctor).length}</p>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
-                  <p className="text-white/35">Clinics</p>
-                  <p className="mt-1 text-lg font-bold text-white">{filteredDoctors.filter((doctor) => !doctor.dbDoctor).length}</p>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
-                  <p className="text-white/35">Open now</p>
-                  <p className="mt-1 text-lg font-bold text-white">{filteredDoctors.filter((doctor) => doctor.isOpen).length}</p>
-                </div>
+              <button type="button" className="btn-secondary !px-4 !py-2" onClick={searchNearby}>
+                Refresh
+              </button>
+            </div>
+            <div className="mt-4 grid grid-cols-3 gap-3 text-xs text-white/60">
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
+                <p className="text-white/35">Doctors</p>
+                <p className="mt-1 text-lg font-bold text-white">{filteredDoctors.filter((doctor) => doctor.dbDoctor).length}</p>
               </div>
-            </motion.div>
-            <NearbyDoctorsList
-              doctors={filteredDoctors}
-              selectedDoctorId={selectedDoctorId}
-              onSelectDoctor={setSelectedDoctorId}
-              onBookDoctor={handleBookDoctor}
-              onViewProfile={(doctorId) => navigate(`/doctors/${doctorId}`)}
-            />
-          </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
+                <p className="text-white/35">Clinics</p>
+                <p className="mt-1 text-lg font-bold text-white">{filteredDoctors.filter((doctor) => !doctor.dbDoctor).length}</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
+                <p className="text-white/35">Open now</p>
+                <p className="mt-1 text-lg font-bold text-white">{filteredDoctors.filter((doctor) => doctor.isOpen).length}</p>
+              </div>
+            </div>
+            <div className="mt-4">
+              <a href={nearbyHospitalMapUrl} target="_blank" rel="noreferrer" className="btn-secondary !px-4 !py-2">
+                Nearby Hospital
+              </a>
+            </div>
+          </motion.div>
 
-          <MapView
-            apiKey={apiKey}
-            center={location || defaultCenter}
+          <NearbyDoctorsList
             doctors={filteredDoctors}
             selectedDoctorId={selectedDoctorId}
             onSelectDoctor={setSelectedDoctorId}
-            onMapLoad={setMap}
             onBookDoctor={handleBookDoctor}
             onViewProfile={(doctorId) => navigate(`/doctors/${doctorId}`)}
           />

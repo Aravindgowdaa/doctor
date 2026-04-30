@@ -16,8 +16,9 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const payload = {
-      email: form.email.trim().toLowerCase(),
+      email: form.email.trim(),
       password: form.password.trim(),
+      role,
     };
     if (!payload.email || !payload.password) {
       toast.error("Enter email and password");

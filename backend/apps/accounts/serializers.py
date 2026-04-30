@@ -105,7 +105,12 @@ class LoginSerializer(serializers.Serializer):
     role = serializers.ChoiceField(choices=User.ROLE_CHOICES, required=False)
 
     def validate(self, attrs):
-        user = authenticate(email=attrs["email"], password=attrs["password"])
+        email = (attrs.get("email") or "").strip()
+        matched_user = User.objects.filter(email__iexact=email).first()
+        if not matched_user:
+            raise serializers.ValidationError("Invalid email or password")
+
+        user = authenticate(email=matched_user.email, password=attrs["password"])
         if not user:
             raise serializers.ValidationError("Invalid email or password")
         selected_role = attrs.get("role")
