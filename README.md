@@ -36,7 +36,7 @@ python -m venv .venv
 pip install -r requirements.txt
 python manage.py makemigrations
 python manage.py migrate
-python manage.py runserver
+python manage.py runserver 127.0.0.1:8001
 ```
 
 Terminal 2 (Frontend):
@@ -49,7 +49,7 @@ npm run dev
 
 URLs:
 
-- Backend: `http://127.0.0.1:8000`
+- Backend: `http://127.0.0.1:8001`
 - Frontend: `http://127.0.0.1:3000`
 
 ## Backend Setup
@@ -72,7 +72,7 @@ python manage.py migrate
 4. Start the backend:
 
 ```bash
-python manage.py runserver
+python manage.py runserver 127.0.0.1:8001
 ```
 
 The seeded admin is created automatically after migrations using:
@@ -109,3 +109,6 @@ npm run dev
 - Cookies are configured for local development right now with `SameSite=Lax` and `secure=False`.
 - For production, set HTTPS and tighten cookie/security settings in `backend/core/settings.py` and `backend/apps/accounts/views.py`.
 - Razorpay and Cloudinary require valid credentials in `backend/.env`.
+- If Windows shows `Error: You don't have permission to access that port`, run backend on another port:
+  `python manage.py runserver 127.0.0.1:8002` and set `VITE_API_URL=http://127.0.0.1:8002/api` in `frontend/.env`.
+
